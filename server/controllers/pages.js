@@ -16,7 +16,27 @@ const entryHelper = require('../helpers/entry')
  * Edit document in Markdown
  */
 router.get('/edit/*', (req, res, next) => {
-  if (!res.locals.rights.write) {
+  var xPaths = ['news', 'general'] // the final word in the url For.e.g : news in /edit/news, general in /edit/general 
+
+  var checkEditAvailable = function (xPaths) {
+    let paths = req.path.split('/')
+
+    let path = paths[ paths.length - 1 ]
+
+    for (let i = 0; i < xPaths.length; i++) {
+      if (path === xPaths[i]) {
+        return false
+      }
+    }
+    return true
+  }
+
+  let rt_array = req.user.rights
+  let rt_array_len = req.user.rights.length
+
+  let role = rt_array[rt_array_len - 1].role
+
+  if (!(role === 'admin') && (!checkEditAvailable(xPaths) || role === 'read')) {
     return res.render('error-forbidden')
   }
 
