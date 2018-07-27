@@ -1,12 +1,12 @@
 'use strict'
 
-/* global entries, git, lang, winston */
+/* global entries, git, lang, winston, appconfig  */
 
 const express = require('express')
 const router = express.Router()
 const _ = require('lodash')
 
-const entryHelper = require('../helpers/entry')
+const entryHelper = require('../helpers/entry');
 
 // ==========================================
 // EDIT MODE
@@ -19,8 +19,29 @@ router.get('/edit/*', (req, res, next) => {
   if (!res.locals.rights.write) {
     return res.render('error-forbidden')
   }
+  let xPaths = appconfig.x_paths
 
-  let safePath = entryHelper.parsePath(_.replace(req.path, '/edit', ''))
+  var checkEditAvailable = function (xPaths) {
+    let page_path = req.path.replace('/edit', '')
+    for (let i = 0; i < xPaths.length; i++) {
+      if (page_path.startsWith(xPaths[i])) {
+        return false
+      }
+    }
+    return true
+  }
+
+  let rt_array = req.user.rights
+
+  let isAdmin = rt_array.find(function(item) {
+    return (item.role === 'admin')
+  })
+
+  if (isAdmin === undefined && !checkEditAvailable(xPaths)) {
+    return res.render('error-forbidden')
+  }
+
+  let safePath = entryHelper.parsePath(_.replace(req.path, '/edit', ''));
 
   entries.fetchOriginal(safePath, {
     parseMarkdown: false,
@@ -35,14 +56,14 @@ router.get('/edit/*', (req, res, next) => {
     } else {
       throw new Error(lang.t('errors:invalidpath'))
     }
-    return true
+    return true;
   }).catch((err) => {
     res.render('error', {
       message: err.message,
       error: {}
-    })
-  })
-})
+    });
+  });
+});
 
 router.put('/edit/*', (req, res, next) => {
   if (!res.locals.rights.write) {
@@ -142,6 +163,7 @@ router.put('/create/*', (req, res, next) => {
  * View tree view of all pages
  */
 router.use((req, res, next) => {
+  console.log('All pages.')
   if (_.endsWith(req.url, '/all')) {
     res.render('pages/all')
   } else {
