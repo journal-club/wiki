@@ -20,20 +20,16 @@ router.get('/edit/*', (req, res, next) => {
     return res.render('error-forbidden')
   }
   let xPaths = appconfig.x_paths
-  console.log(xPaths)
 
   var checkEditAvailable = function (xPaths) {
-    let paths = req.path.split('/')
-    let page_path = paths[ paths.length - 1 ]
-
+    let page_path = req.path.replace('/edit', '')
     for (let i = 0; i < xPaths.length; i++) {
-      if (paths.indexOf(xPaths[i]) > -1 && paths.indexOf(page_path) >= paths.indexOf(xPaths[i])) {
+      if (page_path.startsWith(xPaths[i])) {
         return false
       }
     }
     return true
   }
-  //  console.log('checkEditAvail: ' + checkEditAvailable(xPaths))
 
   let rt_array = req.user.rights
 
@@ -41,7 +37,7 @@ router.get('/edit/*', (req, res, next) => {
     return (item.role === 'admin')
   })
 
-  if (isAdmin === undefined && (!checkEditAvailable(xPaths) || rt_array[0].role === 'read')) {
+  if (isAdmin === undefined && !checkEditAvailable(xPaths)) {
     return res.render('error-forbidden')
   }
 
