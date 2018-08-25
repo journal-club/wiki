@@ -95,6 +95,27 @@ router.get('/create/*', (req, res, next) => {
   if (!res.locals.rights.write) {
     return res.render('error-forbidden')
   }
+  let xPaths = appconfig.x_paths
+
+  var checkEditAvailable = function (xPaths) {
+    let page_path = req.path.replace('/create', '')
+    for (let i = 0; i < xPaths.length; i++) {
+      if (page_path.startsWith(xPaths[i])) {
+        return false
+      }
+    }
+    return true
+  }
+
+  let rt_array = req.user.rights
+
+  let isAdmin = rt_array.find(function(item) {
+    return (item.role === 'admin')
+  })
+
+  if (isAdmin === undefined && !checkEditAvailable(xPaths)) {
+    return res.render('error-forbidden')
+  }
 
   if (_.some(['create', 'edit', 'account', 'source', 'history', 'mk', 'all'], (e) => { return _.startsWith(req.path, '/create/' + e) })) {
     return res.render('error', {
@@ -320,19 +341,46 @@ router.delete('/*', (req, res, next) => {
       error: lang.t('errors:forbidden')
     })
   }
+  let xPaths = appconfig.x_paths
 
-  let safePath = entryHelper.parsePath(req.path)
+  var checkEditAvailable = function (xPaths) {
+    let page_path = req.path
+    console.log(page_path)
+    for (let i = 0; i < xPaths.length; i++) {
+      if (page_path.startsWith(xPaths[i])) {
+        return false
+      }
+    }
+    return true
+  }
 
-  entries.remove(safePath, req.user).then(() => {
-    res.json({
-      ok: true
-    })
-  }).catch((err) => {
-    res.json({
-      ok: false,
-      error: err.message
-    })
+  let rt_array = req.user.rights
+
+  let isAdmin = rt_array.find(function(item) {
+    return (item.role === 'admin')
   })
+
+  if (isAdmin === undefined && !checkEditAvailable(xPaths)) {
+    return res.json({
+      ok: false,
+      msg: "You're not allowed to delete this page"
+    })
+  }
+
+  else {
+    let safePath = entryHelper.parsePath(req.path)
+
+    entries.remove(safePath, req.user).then(() => {
+      res.json({
+        ok: true
+      })
+    }).catch((err) => {
+      res.json({
+        ok: false,
+        error: err.message
+      })
+    })
+  }
 })
 
 module.exports = router
