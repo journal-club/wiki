@@ -6,7 +6,10 @@ const express = require('express')
 const router = express.Router()
 const _ = require('lodash')
 
-const entryHelper = require('../helpers/entry');
+const entryHelper = require('../helpers/entry')
+const checkEditAvailableHelper = require('../helpers/checkEditAvailable')
+const adminCheckHelper = require('../helpers/adminCheck')
+let xPaths = appconfig.x_paths
 
 // ==========================================
 // EDIT MODE
@@ -19,25 +22,10 @@ router.get('/edit/*', (req, res, next) => {
   if (!res.locals.rights.write) {
     return res.render('error-forbidden')
   }
-  let xPaths = appconfig.x_paths
-
-  var checkEditAvailable = function (xPaths) {
-    let page_path = req.path.replace('/edit', '')
-    for (let i = 0; i < xPaths.length; i++) {
-      if (page_path.startsWith(xPaths[i])) {
-        return false
-      }
-    }
-    return true
-  }
 
   let rt_array = req.user.rights
 
-  let isAdmin = rt_array.find(function(item) {
-    return (item.role === 'admin')
-  })
-
-  if (isAdmin === undefined && !checkEditAvailable(xPaths)) {
+  if (adminCheckHelper(rt_array) === undefined && !checkEditAvailableHelper(xPaths,'/edit',req)) {
     return res.render('error-forbidden')
   }
 
@@ -95,25 +83,9 @@ router.get('/create/*', (req, res, next) => {
   if (!res.locals.rights.write) {
     return res.render('error-forbidden')
   }
-  let xPaths = appconfig.x_paths
-
-  var checkEditAvailable = function (xPaths) {
-    let page_path = req.path.replace('/create', '')
-    for (let i = 0; i < xPaths.length; i++) {
-      if (page_path.startsWith(xPaths[i])) {
-        return false
-      }
-    }
-    return true
-  }
-
   let rt_array = req.user.rights
 
-  let isAdmin = rt_array.find(function(item) {
-    return (item.role === 'admin')
-  })
-
-  if (isAdmin === undefined && !checkEditAvailable(xPaths)) {
+  if (adminCheckHelper(rt_array) === undefined && !checkEditAvailableHelper(xPaths,'/create',req)) {
     return res.render('error-forbidden')
   }
 
@@ -343,24 +315,11 @@ router.delete('/*', (req, res, next) => {
   }
   let xPaths = appconfig.x_paths
 
-  var checkEditAvailable = function (xPaths) {
-    let page_path = req.path
-    console.log(page_path)
-    for (let i = 0; i < xPaths.length; i++) {
-      if (page_path.startsWith(xPaths[i])) {
-        return false
-      }
-    }
-    return true
-  }
+
 
   let rt_array = req.user.rights
 
-  let isAdmin = rt_array.find(function(item) {
-    return (item.role === 'admin')
-  })
-
-  if (isAdmin === undefined && !checkEditAvailable(xPaths)) {
+  if (adminCheckHelper(rt_array) === undefined && !checkEditAvailableHelper(xPaths,'/',req)) {
     return res.json({
       ok: false,
       msg: "You're not allowed to delete this page"
